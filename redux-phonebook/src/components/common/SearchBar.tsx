@@ -1,0 +1,60 @@
+import React, { useCallback, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/store';
+import { setQuery, searchContacts, toggleFavoritesFilter } from '@/store/slices/searchSlice';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const SearchBar: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { query, filters, isSearching } = useSelector((state: RootState) => state.search);
+  
+  const debouncedQuery = useDebounce(query, 300);
+
+  const handleSearch = useCallback(() => {
+    if (debouncedQuery.trim()) {
+      dispatch(searchContacts({
+        query: debouncedQuery,
+        filters,
+      }));
+    }
+  }, [dispatch, debouncedQuery, filters]);
+
+  useEffect(() => {
+    handleSearch();
+  }, [handleSearch]);
+
+  return (
+    <div className="flex items-center space-x-4 max-w-md">
+      <div className="relative flex-1">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => dispatch(setQuery(e.target.value))}
+          placeholder="Search contacts..."
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          {isSearching ? (
+            <div className="animate-spin h-5 w-5 text-gray-400">⟳</div>
+          ) : (
+            <div className="h-5 w-5 text-gray-400">🔍</div>
+          )}
+        </div>
+      </div>
+      
+      <button
+        onClick={() => dispatch(toggleFavoritesFilter())}
+        className={`p-2 rounded ${
+          filters.favorites
+            ? 'bg-yellow-500 text-white'
+            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+        }`}
+        title="Filter favorites"
+      >
+        ⭐
+      </button>
+    </div>
+  );
+};
+
+export default SearchBar;
